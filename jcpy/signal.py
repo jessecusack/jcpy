@@ -233,7 +233,7 @@ def interp_nans(x, y, y_fill=None, left=None, right=None, axis=0):
     right : optional float or complex corresponding to fp
         Value to return for `x > xp[-1]`, default is `fp[-1]`.
     axis : [-1, 0, 1], int
-        Default is 0. The axis along which to perform the interpolation.
+        The axis along which to perform the interpolation. Default is 0.
 
     Returns
     -------
@@ -245,44 +245,32 @@ def interp_nans(x, y, y_fill=None, left=None, right=None, axis=0):
 
     ndimy = _np.ndim(y)
     ndimx = _np.ndim(x)
+
     if ndimy > 2 or ndimx > 2:
         raise ValueError("Only 1 or 2 dimensional arrays are supported.")
 
     if ndimx > ndimy:
         raise ValueError("The x input cannot have more dimensions than y.")
 
-    nans = _np.isnan(y)
-
     # TODO: Simplify this using apply_along_axis (I can't quite figure out how though)
     if ndimy == 1:
         yi = _interp_nans_1D(x, y, left, right)
     if ndimy == 2:
-        yi = y.copy()
-        nr, nc = y.shape
+        yi = _np.swapaxes(y.copy(), axis, 0)
+        _, nc = yi.shape
 
-        if axis == 0:
-            for j in range(nc):
-                nanr = nans[:, j]
-                if nanr.all() and y_fill is not None:
-                    yi[:, j] = y_fill
-                    continue
-                if not nanr.any():
-                    continue
-                if ndimx == 2:
-                    yi[:, j] = _interp_nans_1D(x[:, j], y[:, j], left, right)
-                else:
-                    yi[:, j] = _interp_nans_1D(x, y[:, j], left, right)
+        for j in range(nc):
+            nanr = _np.isnan(yi[:, j])
+            if not nanr.any():
+                continue
+            if nanr.all() and y_fill is not None:
+                yi[:, j] = y_fill
+                continue
+            if ndimx == 2:
+                yi[:, j] = _interp_nans_1D(x[:, j], yi[:, j], left, right)
+            else:
+                yi[:, j] = _interp_nans_1D(x, yi[:, j], left, right)
 
-        if axis == 1 or axis == -1:
-            for i in range(nr):
-                nanc = nans[i, :]
-                if nanc.all() and y_fill is not None:
-                    yi[i, :] = y_fill
-                    continue
-                if not nanc.any():
-                    continue
-                if ndimx == 2:
-                    yi[i, :] = _interp_nans_1D(x[i, :], y[i, :], left, right)
-                else:
-                    yi[i, :] = _interp_nans_1D(x, y[i, :], left, right)
+        yi = _np.swapaxes(yi, 0, axis)
+
     return yi
