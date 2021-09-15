@@ -34,7 +34,7 @@ def gap_sizes(y, axis=0):
             Axis along which to operate.
     Returns
     -------
-        gap_sizes : numpy.ndarray
+        gap_sizes : ndarray
             Array of gaps, labelled by size, with the same shape as y.
     """
 
@@ -87,10 +87,8 @@ def _butter(cutoff, fs=1.0, btype="low", order=4):
 
     Returns
     -------
-    b : numpy.ndarray
-        Filter b coefficients.
-    a : numpy.ndarray
-        Filter a coefficients.
+    sos : ndarray
+        Filter coefficients.
 
     """
     cutoff = _np.asarray(cutoff)
@@ -122,7 +120,7 @@ def butter_filter(y, cutoff, fs=1.0, btype="low", order=4, **kwargs):
 
     Returns
     -------
-    y_filt : numpy.ndarray
+    y_filt : ndarray
         The filtered data.
 
     """
@@ -161,7 +159,7 @@ def nan_butter_filter(
 
     Returns
     -------
-    y_filt : numpy array
+    y_filt : ndarray
         The filtered data.
 
     """
@@ -218,22 +216,23 @@ def _interp_nans_1D(x, y, left=None, right=None):
 
 
 def interp_nans(x, y, y_fill=None, left=None, right=None, axis=0):
-    """Fill NaNs in an array by interpolation.
+    """Fill NaNs in data by linear interpolation.
 
     Parameters
     ----------
-    x : 1D or 2D array
-        The x-coordinates of the interpolated values. No NaNs please! should
-        be monotonically increasing I think.
-    y : 1D or 2D array of floats
-        The y-coordinates that will be filled.
-    y_fill : float
+    x : array_like of floats
+        The x-coordinates of the interpolated values. Only 1 or 2 dimensional
+        arrays are supported.
+    y : array_like of floats
+        The data that will be interpolated. Only 1 or 2 dimensional arrays are
+        supported.
+    y_fill : float, optional
         Fill value for rows or columns that are all NaN. Default is leave NaN.
     left : optional float or complex corresponding to fp
         Value to return for `x < xp[0]`, default is `fp[0]`.
     right : optional float or complex corresponding to fp
         Value to return for `x > xp[-1]`, default is `fp[-1]`.
-    axis : [-1, 0, 1] int
+    axis : [-1, 0, 1], int
         Default is 0. The axis along which to perform the interpolation.
 
     Returns
@@ -248,13 +247,13 @@ def interp_nans(x, y, y_fill=None, left=None, right=None, axis=0):
     ndimx = _np.ndim(x)
     if ndimy > 2 or ndimx > 2:
         raise ValueError("Only 1 or 2 dimensional arrays are supported.")
-        
+
     if ndimx > ndimy:
         raise ValueError("The x input cannot have more dimensions than y.")
 
     nans = _np.isnan(y)
 
-    # TODO: Simplify this using apply_along_axis (I can't quite figure out how thought)
+    # TODO: Simplify this using apply_along_axis (I can't quite figure out how though)
     if ndimy == 1:
         yi = _interp_nans_1D(x, y, left, right)
     if ndimy == 2:
