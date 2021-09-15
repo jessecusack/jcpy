@@ -4,7 +4,6 @@
 
 import pytest
 
-
 from jcpy import jcpy
 
 
