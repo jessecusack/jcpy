@@ -51,8 +51,15 @@ lint/flake8: ## check style with flake8
 	flake8 jcpy tests
 lint/black: ## check style with black
 	black --check jcpy tests
+lint/isort: ## check imports with isort
+	isort -c jcpy tests
 
-lint: lint/flake8 lint/black ## check style
+lint: lint/flake8 lint/black lint/isort ## check style
+
+style: ## style code using isort & black, then check style using flake8
+	isort jcpy tests
+	black jcpy tests
+	flake8 jcpy tests
 
 test: ## run tests quickly with the default Python
 	pytest
