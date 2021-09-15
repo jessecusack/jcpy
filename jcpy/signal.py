@@ -186,7 +186,7 @@ def nan_butter_filter(
     y_filt = _np.apply_along_axis(
         discontinuous_filter,
         axis,
-        np.asarray(y),
+        _np.asarray(y),
         cutoff,
         fs,
         btype,
@@ -208,3 +208,82 @@ def nan_butter_filter_renan(
     y_filt = nan_butter_filter(y, cutoff, fs, axis, btype, order, dic, **kwargs)
     y_filt[nans] = _np.nan
     return y_filt
+
+
+def _interp_nans_1D(x, y, left=None, right=None):
+    nans = _np.isnan(y)
+    yi = y.copy()
+    yi[nans] = _np.interp(x[nans], x[~nans], y[~nans], left, right)
+    return yi
+
+
+def interp_nans(x, y, y_fill=None, left=None, right=None, axis=0):
+    """Fill NaNs in an array by interpolation.
+
+    Parameters
+    ----------
+    x : 1D or 2D array
+        The x-coordinates of the interpolated values. No NaNs please! should
+        be monotonically increasing I think.
+    y : 1D or 2D array of floats
+        The y-coordinates that will be filled.
+    y_fill : float
+        Fill value for rows or columns that are all NaN. Default is leave NaN.
+    left : optional float or complex corresponding to fp
+        Value to return for `x < xp[0]`, default is `fp[0]`.
+    right : optional float or complex corresponding to fp
+        Value to return for `x > xp[-1]`, default is `fp[-1]`.
+    axis : [-1, 0, 1] int
+        Default is 0. The axis along which to perform the interpolation.
+
+    Returns
+    -------
+    yi : ndarray
+        The interpolated array. Same size as y
+    """
+    if axis not in [-1, 0, 1]:
+        raise ValueError("The axis may be only -1, 0 or 1.")
+
+    ndimy = _np.ndim(y)
+    ndimx = _np.ndim(x)
+    if ndimy > 2 or ndimx > 2:
+        raise ValueError("Only 1 or 2 dimensional arrays are supported.")
+        
+    if ndimx > ndimy:
+        raise ValueError("The x input cannot have more dimensions than y.")
+
+    nans = _np.isnan(y)
+
+    # TODO: Simplify this using apply_along_axis (I can't quite figure out how thought)
+    if ndimy == 1:
+        yi = _interp_nans_1D(x, y, left, right)
+    if ndimy == 2:
+        yi = y.copy()
+        nr, nc = y.shape
+
+        if axis == 0:
+            for j in range(nc):
+                nanr = nans[:, j]
+                if nanr.all() and y_fill is not None:
+                    yi[:, j] = y_fill
+                    continue
+                if not nanr.any():
+                    continue
+                if ndimx == 2:
+                    yi[:, j] = _interp_nans_1D(x[:, j], y[:, j], left, right)
+                else:
+                    yi[:, j] = _interp_nans_1D(x, y[:, j], left, right)
+
+        if axis == 1 or axis == -1:
+            for i in range(nr):
+                nanc = nans[i, :]
+                if nanc.all() and y_fill is not None:
+                    yi[i, :] = y_fill
+                    continue
+                if not nanc.any():
+                    continue
+                if ndimx == 2:
+                    yi[i, :] = _interp_nans_1D(x[i, :], y[i, :], left, right)
+                else:
+                    yi[i, :] = _interp_nans_1D(x, y[i, :], left, right)
+    return yi
